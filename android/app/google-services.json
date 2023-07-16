@@ -1,33 +1,33 @@
 {
   "project_info": {
-    "project_number": "431974306469",
-    "project_id": "project-9dd78",
-    "storage_bucket": "project-9dd78.appspot.com"
+    "project_number": "739793165091",
+    "project_id": "project-70994",
+    "storage_bucket": "project-70994.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:431974306469:android:a7ce1010024af2b813334c",
+        "mobilesdk_app_id": "1:739793165091:android:7690ab2c18e593d31b4a96",
         "android_client_info": {
           "package_name": "com.example.mess_app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "431974306469-misga366p24ga4ifbldq4vfnj52gqpis.apps.googleusercontent.com",
+          "client_id": "739793165091-3hs8o3t95neht4d084imvpea7vgui13f.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAaDIAGyhNjkcNdeqO0cXdtFTgtxKTM9xQ"
+          "current_key": "AIzaSyBaaBPbWbFGZXzgGTKY5fUHvqKs2XHyx2s"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "431974306469-misga366p24ga4ifbldq4vfnj52gqpis.apps.googleusercontent.com",
+              "client_id": "739793165091-3hs8o3t95neht4d084imvpea7vgui13f.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

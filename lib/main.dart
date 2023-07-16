@@ -7,7 +7,15 @@ import 'package:mess_app/drawer/SignIn.dart';
 import 'package:mess_app/drawer/LogOut.dart';
 import 'package:mess_app/chats/Chat.dart';
 import 'package:mess_app/chats/People.dart';
-void main() => runApp(const MyApp());
+import 'package:mess_app/homePage/SignInPage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+Future<void> main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
 class MyApp extends StatelessWidget{
   const MyApp({super.key});
 
@@ -18,14 +26,18 @@ class MyApp extends StatelessWidget{
         '/':(context) => const Home(),
         '/massageRequest':(context) => const SpamMessage(),
         '/logIn':(context) => const LogIn(),
-        '/signIn':(context) => const SignIn(),
+        '/signIn':(context) => const SignUp(),
         '/logOut':(context) => const LogOut(),
         '/chat':(context)=> const Chat(),
         '/people':(context)=>const People(),
+        '/afterHome':(context)=>const HomeScreen(),
+        '/registerPage':(context) =>const SignInPage(),
+
       },
       initialRoute: '/',
       title: "Project",
       theme: ThemeData(primaryColor: Colors.blue[100]),
     );
   }
+
 }
