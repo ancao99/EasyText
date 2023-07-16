@@ -85,9 +85,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.logout_rounded),
-              title: const Text('Log Out'),
+              title: const Text('Account Setting'),
               onTap: () {
-                Navigator.pushNamed(context, '/logOut');
+                Navigator.pushNamed(context, '/accountSetting');
               },
             ),
           ],
@@ -100,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const Chat(),
+                  builder: (context) => Chat(),
                 ),
               );
             },
