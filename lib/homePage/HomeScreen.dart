@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mess_app/chats/Chat.dart';
@@ -10,34 +11,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int _selectedIndex = 0;
-  // This controller will store the value of the search bar
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
-
-  void initState() {
-    SystemChannels.textInput.invokeMethod('TextInput.hide');
-    super.initState();
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    // Navigate to another page based on the selected index
-    if (index == 0) {
-      Navigator.pushNamed(context, '/');
-    } else if (index == 1) {
-      Navigator.pushNamed(context, '/people');
-    }
-  }
-
+  final TextEditingController _taskController = TextEditingController();
+  final CollectionReference _tasksCollection =
+  FirebaseFirestore.instance.collection('tasks');
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       appBar: AppBar(
         title: const Text('Welcome to EasyText',
         style: TextStyle(color: Colors.black)),
@@ -64,97 +43,110 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.chat_bubble_rounded),
-              title: const Text('Chats'),
+              title: const Text('Task'),
               onTap: () {
                 Navigator.pushNamed(context, '/afterHome');
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.contact_page_outlined),
-              title: const Text('New People'),
-              onTap: () {
-                Navigator.pushNamed(context, '/afterHome');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.chat),
-              title: const Text('Spam Massage'),
-              onTap: () {
-                Navigator.pushNamed(context, '/massageRequest');
-              },
-            ),
+
             ListTile(
               leading: const Icon(Icons.logout_rounded),
-              title: const Text('Account Setting'),
+              title: const Text('Log out'),
               onTap: () {
-                Navigator.pushNamed(context, '/accountSetting');
+                Navigator.pushNamed(context, '/logOut');
+              },
+            ),ListTile(
+              leading: const Icon(Icons.delete_forever),
+              title: const Text('Delete Account'),
+              onTap: () {
+                Navigator.pushNamed(context, '/deleteAccount');
               },
             ),
           ],
         ),
       ),
-      body: ListView.builder(
-        itemBuilder: (context, index) {
-          return ListTile(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => Chat(),
+      body:
+      StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        // Step 4: Connect to Firestore
+        //stream: _tasksCollection.snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Text('No tasks yet.'),
+            );
+          }
+
+          // Step 5: Display Tasks from Firestore
+          return ListView.builder(
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              final task = snapshot.data!.docs[index].data()['task'];
+              final taskId = snapshot.data!.docs[index].id;
+
+              return ListTile(
+                title: Text(task),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () => _deleteTask(taskId), // Step 7: Delete Tasks from Firestore
                 ),
               );
             },
-            leading: const CircleAvatar(
-              child: Icon(Icons.person),
-            ),
-            title: Text('Contact $index'),
-            subtitle: const Text('Last message'),
-            trailing: const Text('Time'),
           );
         },
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.blue[100],
-        unselectedItemColor: Colors.black,
-        selectedItemColor: Colors.red,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: const [
-          //Chats item
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_rounded),label:'chats'),
-          //People item
-          BottomNavigationBarItem(icon: Icon(Icons.people_rounded),label: 'people'),
-        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Show the bottom sheet with the search bar
-          showModalBottomSheet(
+          showDialog(
             context: context,
-            isScrollControlled: true,
             builder: (context) {
-              return Padding(
-                padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom),
-                child: Container(
-                  height: 60,
-                  child: TextField(
-                    autofocus: false,
-                    focusNode: _searchFocusNode,
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.search),
-                      hintText: 'Search...',
-                      border: OutlineInputBorder(),
-                    ),
+              return AlertDialog(
+                title: Text('Add New Task'),
+                content: TextField(
+                  controller: _taskController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter your task...',
                   ),
                 ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Step 6: Add Tasks to Firestore
+                      _addTask();
+                      Navigator.pop(context);
+                    },
+                    child: Text('Add'),
+                  ),
+                ],
               );
             },
           );
         },
-        child: Icon(Icons.search),
+        child: Icon(Icons.add),
       ),
     );
+  }
+  void _addTask() async {
+    String task = _taskController.text.trim();
+    if (task.isNotEmpty) {
+      _taskController.clear();
+      await _tasksCollection.add({'task': task});
+    }
+
+  }
+
+  void _deleteTask(String taskId) async {
+    await _tasksCollection.doc(taskId).delete();
   }
 }

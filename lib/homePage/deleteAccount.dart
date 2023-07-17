@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class LogOut extends StatelessWidget {
-  const LogOut({Key? key}) : super(key: key);
+class DeleteAccountPage extends StatelessWidget {
+  const DeleteAccountPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class LogOut extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'Do you want to log out? ',
+                      'Do you want to delete account? ',
                       style: TextStyle(
                         fontSize: 20.0,
                       ),
@@ -41,15 +41,23 @@ class LogOut extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () async {
                         try {
-                          await FirebaseAuth.instance.signOut();
-                          // If the sign-out is successful, navigate to the login page.
+                          User? user = FirebaseAuth.instance.currentUser;
+                          await user?.delete();
+                          // If the deletion is successful, navigate to the login page.
                           Navigator.pushReplacementNamed(context, '/logIn');
                         } catch (e) {
-                          // Handle any sign-out errors, if necessary.
-                          print('Error signing out: $e');
+                          // Handle any errors during the account deletion, if necessary.
+                          print('Error deleting account: $e');
                         }
                       },
-                      child: const Text('Log out '),
+                      child: const Text('Delete'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // Optionally, provide a cancel option to dismiss the delete account page
+                        Navigator.pop(context);
+                      },
+                      child: Text('Cancel'),
                     ),
                   ],
                 ),
