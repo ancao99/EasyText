@@ -30,7 +30,10 @@ class _HomePageState extends State<HomePage> {
   List<MyChat> listChats = List.empty();
   List appBarAction = [
     [],
-    [const PopupMenuItem<int>(value: 0, child: Text("Create Task"))],
+    [
+      const PopupMenuItem<int>(value: 0, child: Text("Create Task")),
+      const PopupMenuItem<int>(value: 1, child: Text("Sort by Due Date"))
+    ],
     [
       const PopupMenuItem<int>(value: 0, child: Text("Add People")),
       const PopupMenuItem<int>(value: 1, child: Text("Delete People"))
@@ -38,7 +41,6 @@ class _HomePageState extends State<HomePage> {
     [],
   ];
   List appBarTitle = ["Loading", "Task List", "Contacts", "Recent Chat"];
-  bool loading = true;
 
   @override
   initState() {
@@ -121,7 +123,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
     setState(() {
-      page_index = 1;
+      page_index = (page_index == 0 ? 1 : page_index);
     });
   }
 
@@ -140,274 +142,291 @@ class _HomePageState extends State<HomePage> {
   void appBarClick(int item) {
     switch (appBarAction[page_index][item]) {
       case "Create Task":
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              var nameController = TextEditingController();
-              var dateDueController = TextEditingController();
-              var noteController = TextEditingController();
-              DateTime? selectedDate;
-              Future<void> selectDate(BuildContext context) async {
-                final DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate ?? DateTime.now(),
-                  firstDate: DateTime(2023),
-                  lastDate: DateTime(2101),
-                );
-
-                if (picked != null && picked != selectedDate) {
-                  setState(() {
-                    selectedDate = picked;
-                    dateDueController.text =
-                        "${selectedDate!.month}/${selectedDate!.day}/${selectedDate!.year}";
-                  });
-                }
-              }
-
-              return AlertDialog(
-                scrollable: true,
-                title: const Text('Create Task'),
-                content: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Form(
-                    child: Column(
-                      children: <Widget>[
-                        TextFormField(
-                          controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Title',
-                            icon: Icon(Icons.title),
-                          ),
-                        ),
-                        TextFormField(
-                          controller: dateDueController,
-                          readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Due Date (MM/DD/YYYY)',
-                            icon: Icon(Icons.date_range),
-                          ),
-                          onTap: () {
-                            selectDate(context);
-                          },
-                        ),
-                        TextFormField(
-                          controller: noteController,
-                          decoration: const InputDecoration(
-                            labelText: 'Note',
-                            icon: Icon(Icons.message),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      var name = nameController.text;
-                      var dateDue = dateDueController.text;
-                      var note = noteController.text;
-                      if (name == "" || dateDue == "" || note == "") {
-                        messengeBoxShow("Invaild input");
-                      }
-                      MyTask newTask = MyTask();
-                      newTask.nameEvent = name;
-                      newTask.note = note;
-                      newTask.ownerID = currentUser.userID!.toString();
-                      newTask.dueDate = dateDue;
-                      newTask.sharedID = "";
-                      newTask.status = "Pending";
-
-                      final taskCollection = db.collection("Tasks");
-                      var tasks = taskCollection.doc();
-                      newTask.taskID = tasks.id;
-                      tasks.set(newTask.toFirestore());
-                      final userCollection = db.collection("Users");
-                      currentUser.taks = (currentUser.taks == ""
-                          ? tasks.id
-                          : "${currentUser.taks},${tasks.id}");
-                      userCollection
-                          .doc(currentUser.userID)
-                          .set(currentUser.toFirestore());
-                      messengeBoxShow("Created Task.");
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Create'),
-                  ),
-                ],
-              );
-            });
+        showCreateTask();
+        break;
+      case "Sort by Due Date":
+        sortTaskByDueDate();
         break;
       case "Add People":
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              var emailController = TextEditingController();
-
-              return AlertDialog(
-                scrollable: true,
-                title: const Text('Add Person'),
-                content: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Form(
-                    child: Column(
-                      children: <Widget>[
-                        TextFormField(
-                          controller: emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            icon: Icon(Icons.email),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      var email = emailController.text;
-                      if (email == "") {
-                        messengeBoxShow("Enter Email your want to remove");
-                        return;
-                      }
-                      final userCollection = db.collection("Users");
-                      try {
-                        userCollection
-                            .where("email", isEqualTo: email)
-                            .get()
-                            .then(
-                          (querySnapshot) {
-                            if (querySnapshot.docs.isNotEmpty ||
-                                email.compareTo(currentUser.email.toString()) ==
-                                    0) {
-                              messengeBoxShow(
-                                  'This email in invaild. Try another one.');
-                            } else {
-                              MyUser newUser =
-                                  MyUser.fromFirestore(querySnapshot.docs[0]);
-                              if (!currentUser.contacts!
-                                  .contains(newUser.userID.toString())) {
-                                currentUser.contacts = (currentUser.contacts ==
-                                        ""
-                                    ? newUser.userID
-                                    : "${currentUser.contacts},${newUser.userID}");
-                                newUser.contacts = (newUser.contacts == ""
-                                    ? currentUser.userID
-                                    : "${newUser.contacts},${currentUser.userID}");
-                                userCollection
-                                    .doc(newUser.userID)
-                                    .set(newUser.toFirestore());
-                                userCollection
-                                    .doc(currentUser.userID)
-                                    .set(currentUser.toFirestore());
-                                messengeBoxShow("Add person sucessful.");
-                              } else {
-                                messengeBoxShow(
-                                    "This email already in contacts");
-                              }
-                            }
-                          },
-                          onError: (e) => {messengeBoxShow("Error ${e.code}")},
-                        );
-                      } catch (e) {}
-                    },
-                    child: const Text('Create'),
-                  ),
-                ],
-              );
-            });
+        showAddPeople();
         break;
       case "Delete People":
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              var emailController = TextEditingController();
-              return AlertDialog(
-                scrollable: true,
-                title: const Text('Delete Person'),
-                content: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Form(
-                    child: Column(
-                      children: <Widget>[
-                        TextFormField(
-                          controller: emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            icon: Icon(Icons.email),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      var email = emailController.text;
-                      if (email == "") {
-                        messengeBoxShow("Enter Email your want to remove");
-                        return;
-                      }
-                      final userCollection = db.collection("Users");
-                      try {
-                        userCollection
-                            .where("email", isEqualTo: email)
-                            .get()
-                            .then(
-                          (querySnapshot) {
-                            if (querySnapshot.docs.isEmpty ||
-                                email.compareTo(currentUser.email.toString()) ==
-                                    0) {
-                              messengeBoxShow('This email in invaild.');
-                            } else {
-                              MyUser newUser =
-                                  MyUser.fromFirestore(querySnapshot.docs[0]);
-
-                              List<String> parts =
-                                  currentUser.contacts!.split(',');
-                              parts.remove(newUser.userID.toString());
-                              currentUser.contacts = parts.join(',');
-
-                              parts = newUser.contacts!.split(',');
-                              parts.remove(currentUser.userID.toString());
-                              newUser.contacts = parts.join(',');
-
-                              newUser.contacts = (newUser.contacts == ""
-                                  ? currentUser.userID
-                                  : "${newUser.contacts},${currentUser.userID}");
-                              userCollection
-                                  .doc(newUser.userID)
-                                  .set(newUser.toFirestore());
-                              userCollection
-                                  .doc(currentUser.userID)
-                                  .set(currentUser.toFirestore());
-                            }
-                          },
-                          onError: (e) => {messengeBoxShow("Error ${e.code}")},
-                        );
-                      } catch (e) {}
-                    },
-                    child: const Text('Delete'),
-                  ),
-                ],
-              );
-            });
+        showDeletePeople();
         break;
     }
+  }
+
+  void sortTaskByDueDate() {
+    listTasks.sort((task1, task2) {
+      DateTime dueDate1 = task1.getDueDateAsDateTime();
+      DateTime dueDate2 = task2.getDueDateAsDateTime();
+      return dueDate1.compareTo(dueDate2);
+    });
+    setState(() {
+      page_index = page_index;
+    });
+  }
+
+  void showCreateTask() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          var nameController = TextEditingController();
+          var dateDueController = TextEditingController();
+          var noteController = TextEditingController();
+          DateTime? selectedDate;
+          Future<void> selectDate(BuildContext context) async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: selectedDate ?? DateTime.now(),
+              firstDate: DateTime(2023),
+              lastDate: DateTime(2101),
+            );
+
+            if (picked != null && picked != selectedDate) {
+              setState(() {
+                selectedDate = picked;
+                dateDueController.text =
+                    "${selectedDate!.month}/${selectedDate!.day}/${selectedDate!.year}";
+              });
+            }
+          }
+
+          return AlertDialog(
+            scrollable: true,
+            title: const Text('Create Task'),
+            content: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Form(
+                child: Column(
+                  children: <Widget>[
+                    TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Title',
+                        icon: Icon(Icons.title),
+                      ),
+                    ),
+                    TextFormField(
+                      controller: dateDueController,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Due Date (MM/DD/YYYY)',
+                        icon: Icon(Icons.date_range),
+                      ),
+                      onTap: () {
+                        selectDate(context);
+                      },
+                    ),
+                    TextFormField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Note',
+                        icon: Icon(Icons.message),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  var name = nameController.text;
+                  var dateDue = dateDueController.text;
+                  var note = noteController.text;
+                  if (name == "" || dateDue == "" || note == "") {
+                    messengeBoxShow("Invaild input");
+                  }
+                  MyTask newTask = MyTask();
+                  newTask.nameEvent = name;
+                  newTask.note = note;
+                  newTask.ownerID = currentUser.userID!.toString();
+                  newTask.dueDate = dateDue;
+                  newTask.sharedID = "";
+                  newTask.status = "Pending";
+
+                  final taskCollection = db.collection("Tasks");
+                  var tasks = taskCollection.doc();
+                  newTask.taskID = tasks.id;
+                  tasks.set(newTask.toFirestore());
+                  final userCollection = db.collection("Users");
+                  currentUser.taks = (currentUser.taks == ""
+                      ? tasks.id
+                      : "${currentUser.taks},${tasks.id}");
+                  userCollection
+                      .doc(currentUser.userID)
+                      .set(currentUser.toFirestore());
+                  messengeBoxShow("Created Task.");
+                  Navigator.pop(context);
+                },
+                child: const Text('Create'),
+              ),
+            ],
+          );
+        });
+  }
+
+  void showAddPeople() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          var emailController = TextEditingController();
+
+          return AlertDialog(
+            scrollable: true,
+            title: const Text('Add Person'),
+            content: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Form(
+                child: Column(
+                  children: <Widget>[
+                    TextFormField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        icon: Icon(Icons.email),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  var email = emailController.text;
+                  if (email == "") {
+                    messengeBoxShow("Enter Email you want to add");
+                    return;
+                  }
+                  final userCollection = db.collection("Users");
+                  try {
+                    userCollection.where("email", isEqualTo: email).get().then(
+                      (querySnapshot) {
+                        if (querySnapshot.docs.isNotEmpty ||
+                            email.compareTo(currentUser.email.toString()) ==
+                                0) {
+                          messengeBoxShow(
+                              'This email in invaild. Try another one.');
+                        } else {
+                          MyUser newUser =
+                              MyUser.fromFirestore(querySnapshot.docs[0]);
+                          if (!currentUser.contacts!
+                              .contains(newUser.userID.toString())) {
+                            currentUser.contacts = (currentUser.contacts == ""
+                                ? newUser.userID
+                                : "${currentUser.contacts},${newUser.userID}");
+                            newUser.contacts = (newUser.contacts == ""
+                                ? currentUser.userID
+                                : "${newUser.contacts},${currentUser.userID}");
+                            userCollection
+                                .doc(newUser.userID)
+                                .set(newUser.toFirestore());
+                            userCollection
+                                .doc(currentUser.userID)
+                                .set(currentUser.toFirestore());
+                            messengeBoxShow("Add person sucessful.");
+                          } else {
+                            messengeBoxShow("This email already in contacts");
+                          }
+                        }
+                      },
+                      onError: (e) => {messengeBoxShow("Error ${e.code}")},
+                    );
+                  } catch (e) {}
+                },
+                child: const Text('Create'),
+              ),
+            ],
+          );
+        });
+  }
+
+  void showDeletePeople() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          var emailController = TextEditingController();
+          return AlertDialog(
+            scrollable: true,
+            title: const Text('Delete Person'),
+            content: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Form(
+                child: Column(
+                  children: <Widget>[
+                    TextFormField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        icon: Icon(Icons.email),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  var email = emailController.text;
+                  if (email == "") {
+                    messengeBoxShow("Enter Email your want to remove");
+                    return;
+                  }
+                  final userCollection = db.collection("Users");
+                  try {
+                    userCollection.where("email", isEqualTo: email).get().then(
+                      (querySnapshot) {
+                        if (querySnapshot.docs.isEmpty ||
+                            email.compareTo(currentUser.email.toString()) ==
+                                0) {
+                          messengeBoxShow('This email in invaild.');
+                        } else {
+                          MyUser newUser =
+                              MyUser.fromFirestore(querySnapshot.docs[0]);
+
+                          List<String> parts = currentUser.contacts!.split(',');
+                          parts.remove(newUser.userID.toString());
+                          currentUser.contacts = parts.join(',');
+
+                          parts = newUser.contacts!.split(',');
+                          parts.remove(currentUser.userID.toString());
+                          newUser.contacts = parts.join(',');
+
+                          newUser.contacts = (newUser.contacts == ""
+                              ? currentUser.userID
+                              : "${newUser.contacts},${currentUser.userID}");
+                          userCollection
+                              .doc(newUser.userID)
+                              .set(newUser.toFirestore());
+                          userCollection
+                              .doc(currentUser.userID)
+                              .set(currentUser.toFirestore());
+                        }
+                      },
+                      onError: (e) => {messengeBoxShow("Error ${e.code}")},
+                    );
+                  } catch (e) {}
+                },
+                child: const Text('Delete'),
+              ),
+            ],
+          );
+        });
   }
 
   void messengeBoxShow(String text) {

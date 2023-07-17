@@ -41,17 +41,6 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    currentChat = ModalRoute.of(context)!.settings.arguments as MyChat;
-    SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-      // Auth get user id
-      await loadingMyDataBase();
-      //listUsers = await getAllUsers();
-    });
-    return Scaffold(key: _scaffoldKey, appBar: myAppBar(), body: myBody());
-  }
-
   Future<void> updateAll() async {
     //Mission loading my user and blindding data.
     final msgCollection = db.collection("Messages");
@@ -78,6 +67,16 @@ class _ChatPageState extends State<ChatPage> {
     msgCollection.doc(currentChat.msgID).snapshots().listen((event) {
       updateAll();
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
+      // Auth get user id
+      await loadingMyDataBase();
+      //listUsers = await getAllUsers();
+    });
+    return Scaffold(key: _scaffoldKey, appBar: myAppBar(), body: myBody());
   }
 
   myAppBar() {

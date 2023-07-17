@@ -2,8 +2,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:mess_app/homePage/CoverPage.dart';
 import 'package:mess_app/homePage/HomePage.dart';
-import 'package:mess_app/subPages/AccountPage.dart';
-import 'package:mess_app/subPages/TaskPage.dart';
 
 import 'firebase_options.dart';
 import 'gobal_data.dart';
@@ -29,8 +27,6 @@ class MyApp extends StatelessWidget {
         MyRouter.SignUpPage: (context) => const SignUpPage(),
         MyRouter.SignInPage: (context) => const SignInPage(),
         MyRouter.HomePage: (context) => const HomePage(),
-        MyRouter.TaskPage: (context) => const TaskPage(),
-        MyRouter.ContactPage: (context) => const AccountPage(),
       },
       initialRoute: MyRouter.CoverPage,
       title: "Project",
