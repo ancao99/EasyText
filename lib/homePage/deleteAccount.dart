@@ -1,7 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class LogOut extends StatelessWidget {
-  const LogOut({Key? key}) : super(key: key);
+class DeleteAccountPage extends StatelessWidget {
+  const DeleteAccountPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -32,23 +33,31 @@ class LogOut extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'You are logged out',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                      ),
-                    ),
-                    const Text(
-                      'Do you want to sign in? ',
+                      'Do you want to delete account? ',
                       style: TextStyle(
                         fontSize: 20.0,
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        print('Sign In');
-                        Navigator.pushNamed(context, '/registerPage');
+                      onPressed: () async {
+                        try {
+                          User? user = FirebaseAuth.instance.currentUser;
+                          await user?.delete();
+                          // If the deletion is successful, navigate to the login page.
+                          Navigator.pushReplacementNamed(context, '/logIn');
+                        } catch (e) {
+                          // Handle any errors during the account deletion, if necessary.
+                          print('Error deleting account: $e');
+                        }
                       },
-                      child: const Text('Sign In'),
+                      child: const Text('Delete'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // Optionally, provide a cancel option to dismiss the delete account page
+                        Navigator.pop(context);
+                      },
+                      child: Text('Cancel'),
                     ),
                   ],
                 ),
