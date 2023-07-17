@@ -84,6 +84,11 @@ class _TaskPageState extends State<TaskPage> {
       actions: <Widget>[
         PopupMenuButton<int>(
           onSelected: (item) {
+            if (currentUser.userID!.compareTo(ownerUser.userID.toString()) !=
+                0) {
+              messengeBoxShow("Function only support for owner Task");
+              return;
+            }
             switch (item) {
               case 0:
                 showShareInput();
