@@ -43,6 +43,7 @@ class _SignInPageState extends State<SignInPage> {
                 style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
             TextField(
                 controller: passwordController,
+                obscureText: true,
                 decoration:
                     const InputDecoration(hintText: 'Enter your password')),
             const SizedBox(height: 16),

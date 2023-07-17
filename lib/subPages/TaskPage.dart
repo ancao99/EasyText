@@ -25,8 +25,8 @@ class _TaskPageState extends State<TaskPage> {
   List<MyUser> sharedList = List.empty();
 
   String taskID = "";
-  int page_index = 0;
-
+  int pageIndex = 0;
+  bool loading = true;
   @override
   initState() {
     super.initState();
@@ -41,33 +41,42 @@ class _TaskPageState extends State<TaskPage> {
     }
   }
 
-  Future<void> updateAll() async {
-    //Mission loading my user and blindding data.
-    final userCollection = db.collection("Users");
-    final taskCollection = db.collection("Tasks");
-    // build my User
-    await userCollection.doc(firebaseAuth.currentUser!.uid).get().then(
-      (value) {
-        currentUser = MyUser.fromFirestore(value);
-      },
-    );
-    // build task
-    await taskCollection.doc(taskID).get().then((value) {
-      currentTask = MyTask.fromFirestore(value);
-    });
+  updateTask() async {
+    try {
+      //Mission loading my user and blindding data.
+      final userCollection = db.collection("Users");
+      final taskCollection = db.collection("Tasks");
+      // build my User
+      await userCollection.doc(firebaseAuth.currentUser!.uid).get().then(
+        (value) {
+          currentUser = MyUser.fromFirestore(value);
+        },
+      );
+      // build task
+      await taskCollection.doc(taskID).get().then((value) {
+        currentTask = MyTask.fromFirestore(value);
+      });
+    } catch (e) {
+      messengerBoxShow("Task error $e");
+    }
+  }
 
+  updateState() {
     setState(() {
-      page_index = 1;
+      pageIndex = pageIndex;
     });
   }
 
   Future<void> loadingMyDataBase() async {
-    updateAll();
-    final taskCollection = db.collection("Tasks");
+    if (loading) {
+      updateTask();
+      loading = false;
+    }
+    //final taskCollection = db.collection("Tasks");
     // add listen for user:
-    taskCollection.doc(currentTask.taskID).snapshots().listen((event) {
-      updateAll();
-    });
+    //taskCollection.doc(currentTask.taskID).snapshots().listen((event) {
+    //  updateTask();
+    //});
   }
 
   @override
@@ -157,8 +166,9 @@ class _TaskPageState extends State<TaskPage> {
                           .doc(ownerUser.userID)
                           .set(targetUser.toFirestore());
                     });
-
-                    messengeBoxShow("Remove share successful");
+                    messengeBoxShow("Remove Task successful");
+                    updateTask();
+                    updateState();
                   } catch (e) {
                     messengeBoxShow("Remove share error $e");
                   }
@@ -237,6 +247,8 @@ class _TaskPageState extends State<TaskPage> {
                       taskCollection.doc(currentTask.taskID).delete();
                     });
                     messengeBoxShow("Remove share successful");
+                    updateTask();
+                    updateState();
                   } catch (e) {
                     messengeBoxShow("Remove share error $e");
                   }
@@ -316,6 +328,8 @@ class _TaskPageState extends State<TaskPage> {
                             .doc(currentTask.taskID)
                             .set(currentTask.toFirestore());
                         messengeBoxShow("Create successful");
+                        updateTask();
+                        updateState();
                         Navigator.pop(context);
                       }
                     });
@@ -352,7 +366,7 @@ class _TaskPageState extends State<TaskPage> {
   }
 
   myBody() {
-    switch (page_index) {
+    switch (pageIndex) {
       case 0:
         return widgetLoading();
       case 1:

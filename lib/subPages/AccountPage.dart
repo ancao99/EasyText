@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:js_interop';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,6 +23,7 @@ class _AccountPageState extends State<AccountPage> {
   MyUser currentUser = MyUser();
   int pageIndex = 0;
   File? imageFile;
+  bool isLoading = true;
   @override
   initState() {
     super.initState();
@@ -31,7 +34,6 @@ class _AccountPageState extends State<AccountPage> {
     } else {
       // User login as Email pass, email no pass, phone number.
       //currentUserID = firebaseAuth.currentUser!.uid;
-      currentUser.userID = firebaseAuth.currentUser!.uid;
     }
   }
 
@@ -45,29 +47,40 @@ class _AccountPageState extends State<AccountPage> {
     return Scaffold(appBar: myAppBar(), body: myBody());
   }
 
-  Future<void> updateAll() async {
-    //Mission loading my user and blindding data.
-    final userCollection = db.collection("Users");
-    await userCollection.doc(currentUser.userID).get().then(
-      (value) {
-        currentUser = MyUser.fromFirestore(value);
-      },
-    );
+  updateCurrentUser() async {
+    try {
+      final userCollection = db.collection("Users");
+      await userCollection.doc(firebaseAuth.currentUser!.uid).get().then(
+        (value) {
+          currentUser = MyUser.fromFirestore(value);
+        },
+      );
+    } catch (e) {
+      messengerBoxShow("Current user Error $e");
+    }
+  }
+
+  updateState() {
     setState(() {
-      pageIndex = 1;
+      pageIndex = pageIndex;
     });
   }
 
   Future<void> loadingMyDataBase() async {
-    updateAll();
-    final userCollection = db.collection("Users");
-    // add listen for user:
-    userCollection
-        .doc(firebaseAuth.currentUser!.uid)
-        .snapshots()
-        .listen((event) {
-      updateAll();
+    setState(() {
+      pageIndex = 1;
     });
+    if (isLoading) {
+      final userCollection = db.collection("Users");
+      // add listen for user:
+      await userCollection
+          .doc(firebaseAuth.currentUser!.uid)
+          .snapshots()
+          .listen((event) {
+        updateCurrentUser();
+      });
+      isLoading = false;
+    }
   }
 
   Widget widgetLoading() {
@@ -105,20 +118,24 @@ class _AccountPageState extends State<AccountPage> {
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: source);
-    if (pickedFile != null) {
-      File imageFile = File(pickedFile.path);
-      currentUser.pictureCode = await convertToBase64(imageFile);
-      setState(() {
-        imageFile = File(pickedFile.path);
-      });
+    try {
+      if (pickedFile != null) {
+        File imageFile = File(pickedFile.path);
+        currentUser.pictureCode = await convertToBase64(imageFile);
+        setState(() {
+          imageFile = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      messengerBoxShow("Image error $e");
     }
   }
 
   Widget widgetProfileList() {
     TextEditingController emailController =
-        TextEditingController(text: currentUser.email);
+        TextEditingController(text: currentUser.email.toString());
     TextEditingController nameController =
-        TextEditingController(text: currentUser.name);
+        TextEditingController(text: currentUser.name.toString());
     TextEditingController currentPasswordController = TextEditingController();
     TextEditingController newPasswordController = TextEditingController();
     return Padding(
@@ -132,7 +149,6 @@ class _AccountPageState extends State<AccountPage> {
           ),
           TextFormField(
             controller: emailController,
-            keyboardType: TextInputType.emailAddress,
             readOnly: true,
           ),
           const SizedBox(height: 16),
@@ -150,7 +166,8 @@ class _AccountPageState extends State<AccountPage> {
           ),
 
           // Add profile picture selection widget here (e.g., ImagePicker)
-          if (currentUser.pictureCode != "")
+          if (!(currentUser.pictureCode.isNull ||
+              currentUser.pictureCode == ""))
             Container(
               width: 80,
               padding: const EdgeInsets.all(10),
@@ -214,6 +231,8 @@ class _AccountPageState extends State<AccountPage> {
                 }
               }
               messengerBoxShow("Updated succesful");
+              updateCurrentUser();
+              updateState();
             },
             child: const Text('Save Changes'),
           ),

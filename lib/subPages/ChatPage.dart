@@ -1,3 +1,5 @@
+import 'dart:js_interop';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -44,7 +46,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> updateAll() async {
     //Mission loading my user and blindding data.
     final msgCollection = db.collection("Messages");
-    if (msgID == "") {
+    if (msgID.isNull || msgID == "") {
       //new chat box
       currentChat.msgID = "";
       currentChat.owner = "${firebaseAuth.currentUser!.uid},$sendID";

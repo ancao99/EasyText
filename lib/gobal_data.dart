@@ -102,7 +102,8 @@ class MyTask {
     this.status,
   });
   String getSubtitle() {
-    String result = "Due date:\n$dueDate\nShared list:\n$sharedID";
+    String result =
+        "Due date:$dueDate\nShared list:$sharedID\nMission:$detail\n";
     return result;
   }
 

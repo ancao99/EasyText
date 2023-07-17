@@ -12,6 +12,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mess_app/gobal_data.dart';
 
+import '../subPages/AccountPage.dart';
 import '../subPages/ChatPage.dart';
 
 class HomePage extends StatefulWidget {
@@ -26,10 +27,11 @@ class _HomePageState extends State<HomePage> {
   var firebaseAuth = FirebaseAuth.instance;
 
   var pageIndex = 0;
+  bool isLoading = true;
   MyUser currentUser = MyUser();
-  List<MyUser> listContacts = List.empty();
-  List<MyTask> listTasks = List.empty();
-  List<MyChat> listChats = List.empty();
+  List<MyUser> listContacts = List<MyUser>.empty(growable: true);
+  List<MyTask> listTasks = List<MyTask>.empty(growable: true);
+  List<MyChat> listChats = List<MyChat>.empty(growable: true);
   List appBarAction = [
     [],
     [
@@ -74,42 +76,68 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(appBar: myAppBar(), drawer: myDrawer(), body: myBody());
   }
 
-  Future<void> updateAll() async {
+  updateCurrentUser() async {
     try {
       //Mission loading my user and blindding data.
       final userCollection = db.collection("Users");
-      final msgCollection = db.collection("Messages");
-      final taskCollection = db.collection("Tasks");
       // build my User
-      var snapshot = await userCollection.get();
-      for (var docSnapshot in snapshot.docs) {
-        if (docSnapshot.id == firebaseAuth.currentUser!.uid) {
-          currentUser = MyUser.fromFirestore(docSnapshot);
-          break;
-        }
-      }
-
+      await userCollection
+          .doc(firebaseAuth.currentUser!.uid)
+          .get()
+          .then((value) {
+        currentUser = MyUser.fromFirestore(value);
+      });
       if (currentUser.userID.isNull || currentUser.userID == "") {
         messengeBoxShow("currentUser userid null");
         return;
-      } else {
-        messengeBoxShow(currentUser.userID.toString());
       }
+      messengeBoxShow("done current user");
+    } catch (e) {
+      messengeBoxShow("Current user Error $e");
+    }
+  }
+
+  updateTaskList() async {
+    try {
+      final taskCollection = db.collection("Tasks");
       // build task
       if (currentUser.taks.isNull || currentUser.taks == "") {
+        updateCurrentUser();
+        if (currentUser.taks.isNull || currentUser.taks == "") {
+          messengeBoxShow("Task List Empty");
+        }
       } else {
         var tasksIndex = currentUser.taks!.split(",");
+        List<MyTask> tmplistTasks = List<MyTask>.empty(growable: true);
         for (int i = 0; i < tasksIndex.length; i++) {
           await taskCollection.doc(tasksIndex[i]).get().then(
             (value) {
-              var tmp = MyTask.fromFirestore(value);
-              listTasks.add(tmp);
+              MyTask tmp = MyTask.fromFirestore(value);
+              tmplistTasks.add(tmp);
             },
           );
         }
+        listTasks = tmplistTasks;
       }
+      messengeBoxShow("done task");
+      updateState();
+    } catch (e) {
+      messengeBoxShow("Task List Error $e");
+    }
+  }
+
+  void updateState() {
+    setState(() {
+      pageIndex = pageIndex;
+    });
+  }
+
+  updateContactList() async {
+    try {
+      final userCollection = db.collection("Users");
       // build contact
       if (currentUser.contacts.isNull || currentUser.contacts == "") {
+        messengeBoxShow("Contact List Empty");
       } else {
         var contactsIndex = currentUser.contacts!.split(",");
         for (int i = 0; i < contactsIndex.length; i++) {
@@ -121,8 +149,19 @@ class _HomePageState extends State<HomePage> {
           );
         }
       }
+      messengeBoxShow("done contact");
+    } catch (e) {
+      messengeBoxShow("Contact list Error $e");
+    }
+  }
+
+  updateChatList() async {
+    try {
+      final userCollection = db.collection("Users");
+      final msgCollection = db.collection("Messages");
       // build chat
       if (currentUser.chats.isNull || currentUser.chats == "") {
+        messengeBoxShow("Chat List Empty");
       } else {
         var chatsIndex = currentUser.chats!.split(",");
         for (int i = 0; i < chatsIndex.length; i++) {
@@ -145,28 +184,23 @@ class _HomePageState extends State<HomePage> {
           );
         }
       }
-      setState(() {
-        pageIndex = (pageIndex == 0 ? 1 : pageIndex);
-      });
+      messengeBoxShow("done chat");
     } catch (e) {
-      messengeBoxShow("Error $e");
-      setState(() {
-        pageIndex = 0;
-      });
+      messengeBoxShow("Chat list Error $e");
     }
   }
 
   Future<void> loadingMyDataBase() async {
-    updateAll();
-    /*final userCollection = db.collection("Users");
-    // add listen for user:
-    userCollection
-        .doc(firebaseAuth.currentUser!.uid)
-        .snapshots()
-        .listen((event) {
-      updateAll();
-    });
-    */
+    if (isLoading) {
+      updateCurrentUser();
+      updateTaskList();
+      updateContactList();
+      updateChatList();
+      isLoading = false;
+      setState(() {
+        pageIndex = 1;
+      });
+    }
   }
 
   void appBarClick(int item) {
@@ -190,7 +224,7 @@ class _HomePageState extends State<HomePage> {
     listTasks.sort((task1, task2) {
       DateTime dueDate1 = task1.getDueDateAsDateTime();
       DateTime dueDate2 = task2.getDueDateAsDateTime();
-      return dueDate1.compareTo(dueDate2);
+      return dueDate2.compareTo(dueDate1);
     });
     setState(() {
       pageIndex = pageIndex;
@@ -265,7 +299,7 @@ class _HomePageState extends State<HomePage> {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   var name = nameController.text;
                   var dateDue = dateDueController.text;
                   var note = noteController.text;
@@ -273,11 +307,7 @@ class _HomePageState extends State<HomePage> {
                     messengeBoxShow("Invaild input");
                     return;
                   }
-                  if (currentUser.userID.isNull || currentUser.userID == "") {
-                    messengeBoxShow("currentUser userid null");
-                    return;
-                  }
-                  /*
+
                   MyTask newTask = MyTask();
                   newTask.nameEvent = name;
                   newTask.note = note;
@@ -285,7 +315,7 @@ class _HomePageState extends State<HomePage> {
                   newTask.dueDate = dateDue;
                   newTask.sharedID = "";
                   newTask.status = "Pending";
-                  
+
                   try {
                     final taskCollection = db.collection("Tasks");
                     var tasks = taskCollection.doc();
@@ -301,10 +331,12 @@ class _HomePageState extends State<HomePage> {
                         .doc(currentUser.userID)
                         .set(currentUser.toFirestore());
                     messengeBoxShow("Created Task.");
+                    updateTaskList();
+                    updateState();
+                    Navigator.pop(context);
                   } catch (e) {
                     messengeBoxShow("Create Task Error $e");
                   }
-                  */
                 },
                 child: const Text('Create'),
               ),
@@ -377,14 +409,22 @@ class _HomePageState extends State<HomePage> {
                                 .doc(currentUser.userID)
                                 .set(currentUser.toFirestore());
                             messengeBoxShow("Add person sucessful.");
+                            updateContactList();
+                            setState(() {
+                              pageIndex = pageIndex;
+                            });
+                            Navigator.pop(context);
                           } else {
                             messengeBoxShow("This email already in contacts");
                           }
                         }
                       },
-                      onError: (e) => {messengeBoxShow("Error ${e.code}")},
+                      onError: (e) =>
+                          {messengeBoxShow("Create Error ${e.code}")},
                     );
-                  } catch (e) {}
+                  } catch (e) {
+                    messengeBoxShow("Create Error $e");
+                  }
                 },
                 child: const Text('Create'),
               ),
@@ -458,6 +498,13 @@ class _HomePageState extends State<HomePage> {
                           userCollection
                               .doc(currentUser.userID)
                               .set(currentUser.toFirestore());
+                          messengeBoxShow("Delete person sucessful.");
+
+                          updateContactList();
+                          setState(() {
+                            pageIndex = pageIndex;
+                          });
+                          Navigator.pop(context);
                         }
                       },
                       onError: (e) => {messengeBoxShow("Error ${e.code}")},
@@ -601,21 +648,23 @@ class _HomePageState extends State<HomePage> {
             decoration: BoxDecoration(
               color: Colors.blue[100],
             ),
-            child: const Row(
-              children: [
-                Icon(Icons.person, color: Colors.black),
-                SizedBox(width: 10),
-                Text(
-                  'Account Setting',
-                  style: TextStyle(color: Colors.black, fontSize: 18),
-                ),
-              ],
+            child: ListTile(
+              leading: const Icon(Icons.person, color: Colors.black),
+              title: const Text('Account Setting'),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AccountPage(),
+                    ));
+              },
             ),
           ),
           ListTile(
             leading: const Icon(Icons.task),
             title: const Text('Task List'),
             onTap: () {
+              updateTaskList();
               setState(() {
                 pageIndex = 1;
               });
@@ -625,6 +674,7 @@ class _HomePageState extends State<HomePage> {
             leading: const Icon(Icons.contacts),
             title: const Text('Contacts'),
             onTap: () {
+              updateContactList();
               setState(() {
                 pageIndex = 2;
               });
@@ -634,6 +684,7 @@ class _HomePageState extends State<HomePage> {
             leading: const Icon(Icons.chat),
             title: const Text('Recent Chat'),
             onTap: () {
+              updateChatList();
               setState(() {
                 pageIndex = 3;
               });

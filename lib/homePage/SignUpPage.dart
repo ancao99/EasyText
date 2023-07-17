@@ -92,8 +92,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     password: passwordController.text,
                   );
                   // First time
-                  createUserData(credential.user!.uid, nameController.text,
-                      emailController.text, "", "", "", "");
+                  createUserData(credential.user!.uid, emailController.text,
+                      nameController.text, "", "", "", "");
 
                   if (context.mounted) {
                     Navigator.pushNamed(context, MyRouter.HomePage);
