@@ -135,6 +135,15 @@ class MyTask {
       if (status != null) "status": status,
     };
   }
+
+  DateTime getDueDateAsDateTime() {
+    // Assuming the dueDate format is "MM/DD/YYYY"
+    List<String> dateParts = dueDate!.split('/');
+    int month = int.parse(dateParts[0]);
+    int day = int.parse(dateParts[1]);
+    int year = int.parse(dateParts[2]);
+    return DateTime(year, month, day);
+  }
 }
 // My User main tree
 
