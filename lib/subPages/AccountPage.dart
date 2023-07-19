@@ -166,11 +166,13 @@ class _AccountPageState extends State<AccountPage> {
         if (pickedFile != null) {
           File imageFile = File(pickedFile.path);
           currentUser.pictureCode = await convertToBase64(imageFile);
+          setState(() {
+            isLoading = false;
+          });
         }
       } catch (e) {
         messengeBoxShow("Image error $e");
       }
-      Navigator.pop(context);
     }
 
     return SingleChildScrollView(

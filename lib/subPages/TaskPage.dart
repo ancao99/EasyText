@@ -27,7 +27,7 @@ class _TaskPageState extends State<TaskPage> {
   String taskID = "";
 
   // Firbase listen
-  StreamSubscription<DocumentSnapshot>? _listener;
+  StreamSubscription<DocumentSnapshot>? listener;
   bool listenerCreated = false;
   bool isLoading = true;
   setUpListener() {
@@ -50,7 +50,7 @@ class _TaskPageState extends State<TaskPage> {
 
   @override
   void dispose() {
-    _listener?.cancel();
+    listener?.cancel();
     super.dispose();
   }
 
@@ -111,7 +111,7 @@ class _TaskPageState extends State<TaskPage> {
             Navigator.pop(context);
           }
           taskID = widget.arguments['taskID'].toString();
-          _listener = setUpListener();
+          listener = setUpListener();
           listenerCreated = true;
         }
       }
@@ -191,8 +191,8 @@ class _TaskPageState extends State<TaskPage> {
               .set(targetUser.toFirestore());
         });
         // Remove this task.
-        if (_listener != null) {
-          _listener!.cancel();
+        if (listener != null) {
+          listener!.cancel();
         }
 
         final taskCollection = db.collection("Tasks");
@@ -208,6 +208,9 @@ class _TaskPageState extends State<TaskPage> {
     removeTaskButton() {
       removeTask().then((value) {
         if (value == true) {
+          if (listenerCreated && listener != null) {
+            listener!.cancel();
+          }
           Navigator.pop(context);
           Navigator.pop(context);
         }
@@ -478,6 +481,9 @@ class _TaskPageState extends State<TaskPage> {
           (currentUser.userID!.compareTo(ownerUser.userID!.toString()) != 0);
     } catch (e) {
       messengeBoxShow("This task have error : $e");
+      if (listenerCreated && listener != null) {
+        listener!.cancel();
+      }
       Navigator.pop(context);
     }
     // Update button
@@ -564,6 +570,9 @@ class _TaskPageState extends State<TaskPage> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
+                  if (listenerCreated && listener != null) {
+                    listener!.cancel();
+                  }
                   Navigator.pop(context);
                   Navigator.push(
                       context,
