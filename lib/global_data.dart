@@ -145,7 +145,7 @@ class MyUser {
   String? pictureCode;
   String? chats;
   String? contacts;
-  String? taks;
+  String? tasks;
   MyUser(
       {this.userID,
       this.email,
@@ -153,7 +153,7 @@ class MyUser {
       this.pictureCode,
       this.chats,
       this.contacts,
-      this.taks});
+      this.tasks});
 
   //Firebase Cloud Data Decode
   factory MyUser.fromFirestore(
@@ -166,7 +166,7 @@ class MyUser {
       pictureCode: data?['pictureCode'],
       chats: data?['chats'],
       contacts: data?['contacts'],
-      taks: data?['taks'],
+      tasks: data?['taks'],
     );
   }
 
@@ -179,7 +179,7 @@ class MyUser {
       if (pictureCode != null) "pictureCode": pictureCode,
       if (chats != null) "chats": chats,
       if (contacts != null) "contacts": contacts,
-      if (taks != null) "taks": taks,
+      if (tasks != null) "taks": tasks,
     };
   }
 }

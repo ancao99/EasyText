@@ -168,11 +168,11 @@ class _TaskPageState extends State<TaskPage> {
               .get()
               .then((value) async {
             MyUser targetUser = MyUser.fromFirestore(value);
-            if (targetUser.taks != null && targetUser.taks != "") {
+            if (targetUser.tasks != null && targetUser.tasks != "") {
               List<String> parts =
-                  targetUser.taks!.toString().split(',').toSet().toList();
+                  targetUser.tasks!.toString().split(',').toSet().toList();
               parts.remove(currentTask.taskID);
-              targetUser.taks = parts.join(",");
+              targetUser.tasks = parts.join(",");
               await userCollection
                   .doc(sharedList[i].userID)
                   .set(targetUser.toFirestore());
@@ -183,9 +183,9 @@ class _TaskPageState extends State<TaskPage> {
         await userCollection.doc(ownerUser.userID).get().then((value) async {
           MyUser targetUser = MyUser.fromFirestore(value);
           List<String> parts =
-              targetUser.taks!.toString().split(',').toSet().toList();
+              targetUser.tasks!.toString().split(',').toSet().toList();
           parts.remove(currentTask.taskID);
-          targetUser.taks = parts.join(",");
+          targetUser.tasks = parts.join(",");
           await userCollection
               .doc(ownerUser.userID)
               .set(targetUser.toFirestore());
@@ -269,11 +269,11 @@ class _TaskPageState extends State<TaskPage> {
             .get()
             .then((value) async {
           MyUser targetUser = MyUser.fromFirestore(value);
-          if (targetUser.taks != null && targetUser.taks != "") {
+          if (targetUser.tasks != null && targetUser.tasks != "") {
             // edit targetUser tasks
-            List<String> parts = targetUser.taks!.split(',');
+            List<String> parts = targetUser.tasks!.split(',');
             parts.remove(taskID);
-            targetUser.taks = parts.toSet().toList().join(',');
+            targetUser.tasks = parts.toSet().toList().join(',');
 
             // edit currentTask share
             if (currentTask.sharedID != null && currentTask.sharedID != "") {
@@ -370,12 +370,12 @@ class _TaskPageState extends State<TaskPage> {
         }
         // add Task to target
         MyUser newUser = MyUser.fromFirestore(querySnapshot.docs[0]);
-        if (newUser.taks == null || newUser.taks == "") {
-          newUser.taks = taskID;
+        if (newUser.tasks == null || newUser.tasks == "") {
+          newUser.tasks = taskID;
         } else {
-          List<String> parts = newUser.taks!.toString().split(',');
+          List<String> parts = newUser.tasks!.toString().split(',');
           parts.add(taskID);
-          newUser.taks = parts.toSet().toList().join(",");
+          newUser.tasks = parts.toSet().toList().join(",");
         }
         // add Target to ShareList
         if (currentTask.sharedID == null || currentTask.sharedID == "") {

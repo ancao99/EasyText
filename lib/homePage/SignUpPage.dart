@@ -23,7 +23,7 @@ class _SignUpPageState extends State<SignUpPage> {
             pictureCode: pictureCode,
             chats: chats,
             contacts: contacts,
-            taks: taks)
+            tasks: taks)
         .toFirestore());
   }
 

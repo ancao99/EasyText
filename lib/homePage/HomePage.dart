@@ -230,7 +230,7 @@ class _HomePageState extends State<HomePage> {
                 chats: "",
                 contacts: "",
                 pictureCode: "",
-                taks: "")
+                tasks: "")
             .toFirestore());
         return;
       }
@@ -243,15 +243,15 @@ class _HomePageState extends State<HomePage> {
     try {
       final taskCollection = db.collection("Tasks");
       // build task
-      if (currentUser.taks == null || currentUser.taks == "") {
+      if (currentUser.tasks == null || currentUser.tasks == "") {
         await updateCurrentUser();
-        if (currentUser.taks == null || currentUser.taks == "") {
+        if (currentUser.tasks == null || currentUser.tasks == "") {
           messengeBoxShow("Task List Empty");
         }
       } else {
-        var tasksIndex = currentUser.taks!.split(",");
+        var tasksIndex = currentUser.tasks!.split(",");
         bool needCorrection = false;
-        var tasksIndexCorrection = currentUser.taks!.split(",");
+        var tasksIndexCorrection = currentUser.tasks!.split(",");
         List<MyTask> tmplistTasks = List<MyTask>.empty(growable: true);
         for (int i = 0; i < tasksIndex.length; i++) {
           await taskCollection.doc(tasksIndex[i]).get().then(
@@ -269,7 +269,7 @@ class _HomePageState extends State<HomePage> {
         listTasks = tmplistTasks;
         // run correction
         if (needCorrection) {
-          currentUser.taks = tasksIndexCorrection.toSet().toList().join(",");
+          currentUser.tasks = tasksIndexCorrection.toSet().toList().join(",");
 
           final userCollection = db.collection("Users");
           await userCollection
@@ -397,10 +397,10 @@ class _HomePageState extends State<HomePage> {
         var tasks = taskCollection.doc();
         newTask.taskID = tasks.id;
         tasks.set(newTask.toFirestore());
-        if (currentUser.taks == null || currentUser.taks == "") {
-          currentUser.taks = tasks.id;
+        if (currentUser.tasks == null || currentUser.tasks == "") {
+          currentUser.tasks = tasks.id;
         } else {
-          currentUser.taks = "${currentUser.taks},${tasks.id}";
+          currentUser.tasks = "${currentUser.tasks},${tasks.id}";
         }
 
         final userCollection = db.collection("Users");
@@ -719,12 +719,12 @@ class _HomePageState extends State<HomePage> {
         final userCollection = db.collection("Users");
 
         // add Task to target
-        if (targetUser.taks == null || targetUser.taks == "") {
-          targetUser.taks = addTaskID;
+        if (targetUser.tasks == null || targetUser.tasks == "") {
+          targetUser.tasks = addTaskID;
         } else {
-          List<String> parts = targetUser.taks!.toString().split(',');
+          List<String> parts = targetUser.tasks!.toString().split(',');
           parts.add(addTaskID);
-          targetUser.taks = parts.toSet().toList().join(",");
+          targetUser.tasks = parts.toSet().toList().join(",");
         }
         // add Target to ShareList
         MyTask currentTask = listTasks[listTasks.indexWhere(
