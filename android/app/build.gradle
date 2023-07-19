@@ -23,6 +23,7 @@ if (flutterVersionName == null) {
 
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+<<<<<<< HEAD
 apply plugin: 'com.google.gms.google-services'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
@@ -32,22 +33,48 @@ android {
     ndkVersion flutter.ndkVersion
     buildToolsVersion "31.0.0"
 
+=======
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+android {
+    namespace "com.example.easytext"
+    compileSdkVersion flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
+    
+>>>>>>> fd9e333327e493fe7a52207ad023e9b56e2ffbe9
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+<<<<<<< HEAD
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.example.mess_app"
+=======
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId "com.example.easytext"
+>>>>>>> fd9e333327e493fe7a52207ad023e9b56e2ffbe9
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion 19
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+<<<<<<< HEAD
         multiDexEnabled true
+=======
+>>>>>>> fd9e333327e493fe7a52207ad023e9b56e2ffbe9
     }
 
     buildTypes {
@@ -62,6 +89,12 @@ android {
 flutter {
     source '../..'
 }
+<<<<<<< HEAD
 dependencies{
     implementation 'com.android.support:multidex:1.0.3'
+=======
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+>>>>>>> fd9e333327e493fe7a52207ad023e9b56e2ffbe9
 }
