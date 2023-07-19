@@ -8,7 +8,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 
-import '../gobal_data.dart';
+import '../global_data.dart';
 
 class ChatPage extends StatefulWidget {
   final Map<String, String> arguments;

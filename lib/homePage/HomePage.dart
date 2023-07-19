@@ -10,7 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../gobal_data.dart';
+import '../global_data.dart';
 
 import '../subPages/AccountPage.dart';
 import '../subPages/TaskPage.dart';
@@ -185,6 +185,7 @@ class _HomePageState extends State<HomePage> {
             title: const Text('Sign Out'),
             onTap: () async {
               await firebaseAuth.signOut();
+              Navigator.of(context).pushReplacementNamed(MyRouter.SignInPage);
               setState(() {
                 listener!.cancel();
               });

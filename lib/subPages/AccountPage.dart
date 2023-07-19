@@ -8,7 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-import '../gobal_data.dart';
+import '../global_data.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});

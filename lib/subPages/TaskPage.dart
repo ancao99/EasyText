@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-import '../gobal_data.dart';
+import '../global_data.dart';
 import 'ChatPage.dart';
 
 class TaskPage extends StatefulWidget {
@@ -26,14 +26,14 @@ class _TaskPageState extends State<TaskPage> {
   List<MyUser> sharedList = List.empty(growable: true);
   String taskID = "";
 
-  // Firbase listen
+  // Firebase listen
   StreamSubscription<DocumentSnapshot>? listener;
   bool listenerCreated = false;
   bool isLoading = true;
   setUpListener() {
     final taskCollection = db.collection("Tasks");
     taskCollection.doc(taskID).snapshots().listen((event) async {
-      messengeBoxShow("updating");
+      messageboxShow("updating");
       try {
         setState(() {
           isLoading = true;
@@ -43,7 +43,7 @@ class _TaskPageState extends State<TaskPage> {
           isLoading = false;
         });
       } catch (e) {
-        //messengeBoxShow("Error $e");
+        //messageBoxShow("Error $e");
       }
     });
   }
@@ -92,10 +92,10 @@ class _TaskPageState extends State<TaskPage> {
           ownerUser = MyUser.fromFirestore(value);
         });
       } else {
-        messengeBoxShow("This Task don`t have id");
+        messageboxShow("This Task don`t have id");
       }
     } catch (e) {
-      messengeBoxShow("Task error $e");
+      messageboxShow("Task error $e");
     }
   }
 
@@ -124,13 +124,13 @@ class _TaskPageState extends State<TaskPage> {
 
   myAppBar() {
     return AppBar(
-      title: const Text("Task Detail"),
+      title: const Text("Task Mission"),
       actions: <Widget>[
         PopupMenuButton<int>(
           onSelected: (item) {
             if (currentUser.userID!.compareTo(ownerUser.userID.toString()) !=
                 0) {
-              messengeBoxShow("Function only support for owner Task");
+              messageboxShow("Function only support for owner Task");
               return;
             }
             switch (item) {
@@ -197,10 +197,10 @@ class _TaskPageState extends State<TaskPage> {
 
         final taskCollection = db.collection("Tasks");
         taskCollection.doc(taskID).delete();
-        messengeBoxShow("Remove Task successful");
+        messageboxShow("Remove Task successful");
         return true;
       } catch (e) {
-        messengeBoxShow("Remove share error $e");
+        messageboxShow("Remove share error $e");
       }
       return false;
     }
@@ -244,7 +244,7 @@ class _TaskPageState extends State<TaskPage> {
     shareRemove() async {
       var email = emailController.text;
       if (email == "") {
-        messengeBoxShow("Enter Email your want to remove");
+        messageboxShow("Enter Email your want to remove");
         return false;
       }
       // check target in current Share List
@@ -256,7 +256,7 @@ class _TaskPageState extends State<TaskPage> {
         }
       }
       if (targetIndex == -1) {
-        messengeBoxShow("This email is not in share list");
+        messageboxShow("This email is not in share list");
         return false;
       }
 
@@ -291,10 +291,10 @@ class _TaskPageState extends State<TaskPage> {
                 .set(currentTask.toFirestore());
           }
         });
-        messengeBoxShow("Remove share successful");
+        messageboxShow("Remove share successful");
         return true;
       } catch (e) {
-        messengeBoxShow("Remove share error $e");
+        messageboxShow("Remove share error $e");
       }
       return false;
     }
@@ -349,12 +349,12 @@ class _TaskPageState extends State<TaskPage> {
     shareAdd() async {
       var email = emailController.text;
       if (email == "") {
-        messengeBoxShow("Enter Email your want to add");
+        messageboxShow("Enter Email your want to add");
         return false;
       }
       for (var sharedID in sharedList) {
         if (email.compareTo(sharedID.email.toString()) == 0) {
-          messengeBoxShow("This email shared");
+          messageboxShow("This email shared");
           return false;
         }
       }
@@ -365,7 +365,7 @@ class _TaskPageState extends State<TaskPage> {
         var querySnapshot =
             await userCollection.where("email", isEqualTo: email).get();
         if (querySnapshot.docs.isEmpty) {
-          messengeBoxShow('This email in invaild. Try another one.');
+          messageboxShow('This email in invaild. Try another one.');
           return false;
         }
         // add Task to target
@@ -390,10 +390,10 @@ class _TaskPageState extends State<TaskPage> {
         await taskCollection
             .doc(currentTask.taskID)
             .set(currentTask.toFirestore());
-        messengeBoxShow("Create successful");
+        messageboxShow("Create successful");
         return true;
       } catch (e) {
-        messengeBoxShow("Error $e");
+        messageboxShow("Error $e");
       }
       return false;
     }
@@ -490,7 +490,7 @@ class _TaskPageState extends State<TaskPage> {
       readOnly =
           (currentUser.userID!.compareTo(ownerUser.userID!.toString()) != 0);
     } catch (e) {
-      messengeBoxShow("This task have error : $e");
+      messageboxShow("This task have error : $e");
       if (listenerCreated && listener != null) {
         listener!.cancel();
       }
@@ -508,7 +508,7 @@ class _TaskPageState extends State<TaskPage> {
       await taskCollection
           .doc(currentTask.taskID)
           .set(currentTask.toFirestore());
-      messengeBoxShow("Update Successful");
+      messageboxShow("Update Successful");
     }
 
     return SingleChildScrollView(
@@ -524,7 +524,7 @@ class _TaskPageState extends State<TaskPage> {
           const SizedBox(height: 10),
           TextField(
             controller: detailController,
-            decoration: const InputDecoration(labelText: 'Task Mission'),
+            decoration: const InputDecoration(labelText: 'Task details'),
             readOnly: readOnly,
           ),
           const SizedBox(height: 10),
@@ -609,7 +609,7 @@ class _TaskPageState extends State<TaskPage> {
     return result;
   }
 
-  void messengeBoxShow(String text) {
+  void messageboxShow(String text) {
     Fluttertoast.showToast(
         msg: text,
         toastLength: Toast.LENGTH_SHORT,

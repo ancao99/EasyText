@@ -4,7 +4,7 @@ import '../homePage/CoverPage.dart';
 import '../homePage/HomePage.dart';
 
 import 'firebase_options.dart';
-import 'gobal_data.dart';
+import 'global_data.dart';
 import 'homePage/SignInPage.dart';
 import 'homePage/SignUpPage.dart';
 
