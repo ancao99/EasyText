@@ -25,7 +25,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   var db = FirebaseFirestore.instance;
   var firebaseAuth = FirebaseAuth.instance;
-  StreamSubscription<DocumentSnapshot>? _listener;
+  StreamSubscription<DocumentSnapshot>? listener;
   bool listenerCreate = false;
   var pageIndex = 0;
   bool isLoading = true;
@@ -74,7 +74,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    _listener?.cancel();
+    listener?.cancel();
     super.dispose();
   }
 
@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> {
         Navigator.pushReplacementNamed(context, MyRouter.SignInPage);
       } else {
         if (!listenerCreate) {
-          _listener = setUpListener();
+          listener = setUpListener();
           listenerCreate = true;
         }
       }
@@ -185,6 +185,9 @@ class _HomePageState extends State<HomePage> {
             title: const Text('Sign Out'),
             onTap: () async {
               await firebaseAuth.signOut();
+              setState(() {
+                listener!.cancel();
+              });
             },
           ),
         ],
@@ -218,11 +221,20 @@ class _HomePageState extends State<HomePage> {
         currentUser = MyUser.fromFirestore(value);
       });
       if (currentUser.userID == null || currentUser.userID == "") {
-        messengeBoxShow("currentUser userid null");
+        // Let create this user
+        userCollection.doc(firebaseAuth.currentUser!.uid).set(MyUser(
+                userID: firebaseAuth.currentUser!.uid,
+                email: firebaseAuth.currentUser!.email,
+                name: "Auto Create",
+                chats: "",
+                contacts: "",
+                pictureCode: "",
+                taks: "")
+            .toFirestore());
         return;
       }
     } catch (e) {
-      messengeBoxShow("Current user Error $e");
+      //messengeBoxShow("Current user Error $e");
     }
   }
 
@@ -265,7 +277,7 @@ class _HomePageState extends State<HomePage> {
         }
       }
     } catch (e) {
-      messengeBoxShow("Task List Error $e");
+      //messengeBoxShow("Task List Error $e");
     }
   }
 
@@ -660,6 +672,143 @@ class _HomePageState extends State<HomePage> {
         });
   }
 
+  showContactOption(index) {
+    String addTaskID = "";
+    MyUser targetUser = listContacts[index];
+    // Delete current people
+    deletePeople() async {
+      try {
+        final userCollection = db.collection("Users");
+        // delete  target in me
+        List<String> parts = currentUser.contacts!.split(',');
+        parts.remove(targetUser.userID.toString());
+        currentUser.contacts = parts.toSet().toList().join(',');
+        // delete me in target
+        if (targetUser.contacts == null) {
+          targetUser.contacts = "";
+        } else {
+          parts = targetUser.contacts!.split(',');
+          parts.remove(currentUser.userID.toString());
+          targetUser.contacts = parts.toSet().toList().join(',');
+        }
+        // push to target
+        userCollection.doc(targetUser.userID).set(targetUser.toFirestore());
+        //push to me
+        userCollection.doc(currentUser.userID).set(currentUser.toFirestore());
+        messengeBoxShow("Delete person sucessful.");
+        return true;
+      } catch (e) {
+        messengeBoxShow("Create Error $e");
+      }
+      return false;
+    }
+
+    deletePeopleButton() {
+      deletePeople().then((value) {
+        if (value == true) {
+          Navigator.pop(context);
+        }
+      });
+    }
+
+    // Add to Task
+    addToTask() async {
+      try {
+        final taskCollection = db.collection("Tasks");
+        final userCollection = db.collection("Users");
+
+        // add Task to target
+        if (targetUser.taks == null || targetUser.taks == "") {
+          targetUser.taks = addTaskID;
+        } else {
+          List<String> parts = targetUser.taks!.toString().split(',');
+          parts.add(addTaskID);
+          targetUser.taks = parts.toSet().toList().join(",");
+        }
+        // add Target to ShareList
+        MyTask currentTask = listTasks[listTasks.indexWhere(
+            (element) => element.taskID!.compareTo(addTaskID) == 0)];
+
+        if (currentTask.sharedID == null || currentTask.sharedID == "") {
+          currentTask.sharedID = targetUser.userID;
+        } else {
+          List<String> parts = currentTask.sharedID!.toString().split(',');
+          parts.add(targetUser.userID.toString());
+          currentTask.sharedID = parts.toSet().toList().join(",");
+        }
+        // push data
+        await userCollection
+            .doc(targetUser.userID)
+            .set(targetUser.toFirestore());
+        await taskCollection
+            .doc(currentTask.taskID)
+            .set(currentTask.toFirestore());
+        messengeBoxShow("Add to Task Success");
+        return true;
+      } catch (e) {
+        messengeBoxShow("Create Error $e");
+      }
+      return false;
+    }
+
+    addToTaskButton() {
+      addToTask().then((value) {
+        if (value == true) {
+          Navigator.pop(context);
+        }
+      });
+    }
+
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            scrollable: true,
+            title: Text(listContacts[index].email.toString()),
+            content: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Form(
+                child: Column(children: <Widget>[
+                  DropdownButton<String>(
+                    icon: const Icon(Icons.task),
+                    items: listTasks
+                        .where((MyTask thisTask) =>
+                            thisTask.ownerID!
+                                .compareTo(currentUser.userID.toString()) ==
+                            0)
+                        .map((MyTask thisTask) {
+                      return DropdownMenuItem<String>(
+                        value: thisTask.taskID,
+                        child: Text(thisTask.nameEvent.toString()),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        addTaskID = newValue ?? '';
+                      });
+                    },
+                  ),
+                ]),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: addToTaskButton,
+                child: const Text('Add to Task'),
+              ),
+              TextButton(
+                onPressed: deletePeopleButton,
+                child: const Text('Delete People'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
+          );
+        });
+  }
+
 // BOdy render section
   Widget widgetLoading() {
     return SizedBox(
@@ -703,6 +852,7 @@ class _HomePageState extends State<HomePage> {
         return ListTile(
           onTap: () {
             // Show personal information
+            showContactOption(index);
           },
           leading: const CircleAvatar(
             child: Icon(Icons.person),

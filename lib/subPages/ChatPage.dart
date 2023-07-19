@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:http/http.dart' as http;
 
 import '../gobal_data.dart';
 
@@ -134,33 +136,16 @@ class _ChatPageState extends State<ChatPage> {
   Widget widgetChatingList() {
     TextEditingController textEditingController = TextEditingController();
 
-    // Button Send
-    send() async {
-      try {
-        final msgCollection = db.collection("Messages");
-        final smsCollection =
-            msgCollection.doc(taskID).collection("listSMS").doc();
-        // Create SMS
-        SMS newSMS = SMS(
-            msgID: smsCollection.id,
-            fromID: currentID,
-            data: textEditingController.text,
-            timeSend: DateTime.now().millisecondsSinceEpoch.toString());
-        // Push data
-        smsCollection.set(newSMS.toFirestore());
-        return true;
-      } catch (e) {
-        messengeBoxShow("Chat Send Error $e");
-      }
-      return false;
-    }
-
     sendButton() {
       String text = textEditingController.text.trim();
       if (text.isNotEmpty) {
         // Analyzing msg, call Weather API
+        if (text.toUpperCase().startsWith("SYSTEM:")) {
+          systemHandelRequest(text);
+          return;
+        }
         // Push data
-        send().then((value) {
+        send(text).then((value) {
           if (value == true) {
             textEditingController.clear();
           }
@@ -234,6 +219,87 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   // USeful function
+  systemHandelRequest(String text) async {
+    var myRequest = text
+        .replaceFirst("system:", "")
+        .trim()
+        .replaceAll(" ", "")
+        .toUpperCase();
+    SMS newSMS = SMS();
+    newSMS.fromID = currentID;
+    newSMS.senderName = "System";
+    newSMS.timeSend = DateTime.now().millisecondsSinceEpoch.toString();
+    switch (myRequest) {
+      case "GETWEATHER":
+        newSMS.data = "Loading Weather API ...";
+        var index = sendLocal(newSMS);
+        newSMS.data = await getWeatherData();
+        changeLocalSMS(newSMS, index);
+        break;
+      default:
+        newSMS.data = "System only support command:\nSystem: Get Weather";
+        sendLocal(newSMS);
+        break;
+    }
+  }
+
+  sendLocal(SMS newSMS) {
+    setState(() {
+      listSMS.add(newSMS);
+    });
+    return listSMS.length - 1;
+  }
+
+  changeLocalSMS(SMS newSMS, var index) {
+    setState(() {
+      listSMS[index] = newSMS;
+    });
+  }
+
+  // Button Send
+  send(String data) async {
+    try {
+      final msgCollection = db.collection("Messages");
+      final smsCollection =
+          msgCollection.doc(taskID).collection("listSMS").doc();
+      // Create SMS
+      SMS newSMS = SMS(
+          msgID: smsCollection.id,
+          fromID: currentID,
+          data: data,
+          timeSend: DateTime.now().millisecondsSinceEpoch.toString());
+      // Push data
+      smsCollection.set(newSMS.toFirestore());
+      return true;
+    } catch (e) {
+      messengeBoxShow("Chat Send Error $e");
+    }
+    return false;
+  }
+
+  getWeatherData() async {
+    String apiUrl =
+        'https://api.weatherapi.com/v1/current.json?key=$weatherAPIkey&q=Atlanta';
+
+    try {
+      http.Response response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        String temperature = "${data['current']['temp_f'].toString()}F";
+        String condition = data['current']['condition']['text'];
+        String location =
+            "${data['location']['name']},${data['location']['region']}";
+        String windSpeed = "${data['current']['wind_mph'].toString()}mph";
+        String humidity = "${data['current']['humidity'].toString()}%";
+        String localtime = data['location']['localtime'];
+        String output =
+            "Location: $location\nTemperature: $temperature -- Humidity: $humidity\nWindSpeed: $windSpeed -- Condition: $condition\nLocalTime: $localtime";
+        return output;
+      }
+    } catch (e) {}
+    return 'Failed to fetch weather data';
+  }
+
   void messengeBoxShow(String text) {
     Fluttertoast.showToast(
         msg: text,

@@ -262,27 +262,37 @@ class _TaskPageState extends State<TaskPage> {
 
       // remove target
       try {
-        final taskCollection = db.collection("Tasks");
         final userCollection = db.collection("Users");
+        final taskCollection = db.collection("Tasks");
         await userCollection
             .doc(sharedList[targetIndex].userID)
             .get()
             .then((value) async {
           MyUser targetUser = MyUser.fromFirestore(value);
           if (targetUser.taks != null && targetUser.taks != "") {
+            // edit targetUser tasks
             List<String> parts = targetUser.taks!.split(',');
             parts.remove(taskID);
-            targetUser.taks = parts.join(',');
+            targetUser.taks = parts.toSet().toList().join(',');
+
+            // edit currentTask share
+            if (currentTask.sharedID != null && currentTask.sharedID != "") {
+              List<String> parts = currentTask.sharedID!.split(',');
+              parts.remove(targetUser.userID);
+              currentTask.sharedID = parts.toSet().toList().join(',');
+            }
             // push data
             await userCollection
                 .doc(sharedList[targetIndex].userID)
                 .set(targetUser.toFirestore());
+            // push data
+            await taskCollection
+                .doc(currentTask.taskID)
+                .set(currentTask.toFirestore());
           }
-          // push data
-          await taskCollection.doc(taskID).delete();
-          return true;
         });
         messengeBoxShow("Remove share successful");
+        return true;
       } catch (e) {
         messengeBoxShow("Remove share error $e");
       }

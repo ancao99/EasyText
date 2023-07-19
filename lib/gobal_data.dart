@@ -6,6 +6,8 @@ class DefaultTheme {
   static const MaterialColor primarySwatch = Colors.lightBlue;
 }
 
+String weatherAPIkey = "0ada24b016fe4d1b92a20955231907";
+
 class MyRouter {
   static const String CoverPage = '/';
   static const String SignUpPage = '/signUp';
